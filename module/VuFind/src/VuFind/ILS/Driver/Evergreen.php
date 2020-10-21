@@ -208,21 +208,23 @@ HERE;
 
         // Build SQL Statement
         $sql = <<<HERE
-SELECT ccs.name AS status, acn.label AS callnumber, aou.name AS location,
-    ac.copy_number, ac.barcode,
-    extract (year from circ.due_date) as due_year,
-    extract (month from circ.due_date) as due_month,
-    extract (day from circ.due_date) as due_day
-FROM config.copy_status ccs
-    INNER JOIN asset.copy ac ON ac.status = ccs.id
-    INNER JOIN asset.call_number acn ON acn.id = ac.call_number
-    INNER JOIN actor.org_unit aou ON aou.id = ac.circ_lib
-    FULL JOIN action.circulation circ ON (
-        ac.id = circ.target_copy AND circ.checkin_time IS NULL
-    )
-WHERE 
-    acn.record = ? AND
-    NOT ac.deleted
+        SELECT ccs.name AS status, CONCAT (acnp.label, ' ', acn.label) AS callnumber, CONCAT (aou.name, '-', acl.name) AS location, ac.barcode AS barcode,
+        extract (year from circ.due_date) as due_year,
+        extract (month from circ.due_date) as due_month,
+        extract (day from circ.due_date) as due_day
+    
+    FROM config.copy_status ccs
+        INNER JOIN asset.copy ac ON ac.status = ccs.id
+        INNER JOIN asset.copy_location acl ON ac.location = acl.id
+        INNER JOIN asset.call_number acn ON acn.id = ac.call_number
+        INNER JOIN actor.org_unit aou ON aou.id = ac.circ_lib
+        INNER JOIN asset.call_number_prefix acnp ON acn.prefix = acnp.id
+        FULL JOIN action.circulation circ ON (
+            ac.id = circ.target_copy AND circ.checkin_time IS NULL
+        )
+    
+    WHERE acn.record = 50433  AND
+        NOT ac.deleted;
 HERE;
 
         // Execute SQL
